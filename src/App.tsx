@@ -1,35 +1,40 @@
-import {Box, Grid2 as Grid, styled, Typography} from "@mui/material";
+import {Box, Dialog, DialogContent, DialogTitle, Grid2 as Grid, styled, Typography} from "@mui/material";
 import {useState} from "react";
-import {Link} from "react-router-dom";
+import {Link, Outlet, useNavigate, useOutlet} from "react-router-dom";
 import AddIcon from '@mui/icons-material/Add';
 
 type AssetHouse = {
   type: 'house';
   label: string;
+  slug: string;
   amountInDollars: number;
 };
 
 type AssetShares = {
   type: 'shares';
   label: string;
+  slug: string;
   amountInDollars: number;
 };
 
 type AssetLoan = {
   type: 'loan';
   label: string;
+  slug: string;
   amountInDollars: number;
 };
 
 type AssetOffset = {
   type: 'offset';
   label: string;
+  slug: string;
   amountInDollars: number;
 };
 
 type AssetMisc = {
   type: 'misc';
   label: string;
+  slug: string;
   amountInDollars: number;
 };
 
@@ -60,27 +65,6 @@ const formatDollars = (amountInDollars: number, includeCurrency: boolean = true)
   return prefix + absDollars;
 }
 
-const parseDollars = (amount: string) => {
-  const simpleAmount = amount.replace(/\s+/, '').replace(/,/, '');
-  const parts = /^\$?(?<number>\d*?\.?\d*?)(?<unit>[km])?$/.exec(simpleAmount)?.groups;
-  if (parts == null) {
-    return null;
-  }
-
-  const amountInUnits = parseFloat(parts.number);
-  const unit = parts.unit;
-
-  if (unit === 'm') {
-    return amountInUnits * 1000000;
-  }
-
-  if (unit === 'k') {
-    return amountInUnits * 1000;
-  }
-
-  return amountInUnits;
-}
-
 const calcNetPosition = (assets: Asset[]) => {
   let total = 0;
   assets.forEach((asset) => {
@@ -95,43 +79,51 @@ function App() {
     {
       type: 'house',
       label: 'Current House',
+      slug: 'current-house',
       amountInDollars: 850000,
     },
     {
       type: 'loan',
       label: 'Home loan',
+      slug: 'home-loan',
       amountInDollars: -300000,
     },
     {
       type: 'offset',
       label: 'Offset',
+      slug: 'offset',
       amountInDollars: 135000,
     },
     {
       type: 'shares',
       label: 'VAS',
+      slug: 'vas',
       amountInDollars: 80000,
     }
   ]);
 
-  const handleAssetChange = (asset: Asset, amount: string) => {
-    const amountInDollars = parseDollars(amount);
-    if (amountInDollars == null) {
-      console.error('Oops');
-      return;
-    }
-
-    setAssets(assets.map(a => a === asset ? {
-      ...asset,
-      amountInDollars,
-    } : a));
-  }
+  const outlet = useOutlet();
+  const navigate = useNavigate();
 
   const netPosition = calcNetPosition(assets);
 
   const mortgagePerMonth = 2036;
   const mortgageTotal = -300000;
   const houseValue = 850000;
+
+  const renderForm = () => {
+    if (outlet === null) {
+      return null;
+    }
+
+    return (
+      <Dialog open onClose={() => navigate("/")}>
+        <DialogContent>
+          {outlet}
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <Box className="flex flex-col space-y-4">
@@ -141,11 +133,11 @@ function App() {
 
       <Grid container spacing={1}>
         <Grid size={{ xs: 4, md: 3, lg: 1 }}>
-          <ItemButton label="Net" amountInDollars={netPosition} />
+          <ItemButton label="Net" amountInDollars={netPosition} to="/asset/net" />
         </Grid>
         {assets.map(asset =>
           <Grid key={asset.label} size={{ xs: 4, md: 3, lg: 2 }}>
-            <ItemButton label={asset.label} amountInDollars={asset.amountInDollars} />
+            <ItemButton label={asset.label} amountInDollars={asset.amountInDollars} to={`/asset/${asset.slug}`} />
           </Grid>)}
         <Grid size={{ xs: 4, md: 1, lg: 1 }}>
           <SummaryButton to="/asset/add" className="inline-block max-w-12 text-center">
@@ -182,7 +174,7 @@ function App() {
           );
         })}
       </Grid>
-
+      {renderForm()}
     </Box>
   )
 }
@@ -190,11 +182,12 @@ function App() {
 type ItemButtonProps = {
   label: string;
   amountInDollars: number;
+  to: string;
 };
 
-const ItemButton = ({ label, amountInDollars }: ItemButtonProps) => {
+const ItemButton = ({ label, amountInDollars, to }: ItemButtonProps) => {
   return (
-    <EditableSummaryButton label={label}>
+    <EditableSummaryButton label={label} to={to}>
       <Typography variant="body1" color={amountInDollars >= 0 ? 'success' : 'error'}>
         {formatDollars(amountInDollars)}
       </Typography>
@@ -216,12 +209,13 @@ const SummaryButton = styled(Link)({
 
 type EditableSummaryButtonProps = {
   label: string;
+  to: string;
   children: React.ReactNode;
 };
 
-const EditableSummaryButton = ({ label, children }: EditableSummaryButtonProps) => {
+const EditableSummaryButton = ({ label, to, children }: EditableSummaryButtonProps) => {
   return (
-    <SummaryButton className="flex flex-col items-start" to="/">
+    <SummaryButton className="flex flex-col items-start" to={to}>
       <Typography variant="subtitle1">
         {label}
       </Typography>
