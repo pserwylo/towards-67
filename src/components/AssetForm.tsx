@@ -5,7 +5,7 @@ import {
   Liquidity,
   LiquidityType,
   makeSelectAssetBySlug,
-} from "./store/assetSlice.ts";
+} from "../store/assetSlice.ts";
 import {
   Alert,
   Box,
@@ -22,6 +22,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import LiquidityPercentage from "./LiquidityPercentage.tsx";
 
 const AssetForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -119,7 +120,7 @@ const AssetForm = () => {
     switch (editingAsset.liquidity.type) {
       case "percent":
         return (
-          <PercentLiquidity
+          <LiquidityPercentage
             amountInDollars={editingAsset.amountInDollars}
             percent={editingAsset.liquidity.percent}
             onPercentChange={(percent) =>
@@ -308,55 +309,6 @@ const AmountRemaining = ({
           label="Amount Available"
           value={amountInDollars - amountRemainingInDollars}
           type="number"
-        />
-      </FormControl>
-    </div>
-  );
-};
-
-type IPercentLiquidityProps = {
-  amountInDollars: number;
-  percent: number;
-  onPercentChange: (percent: number) => void;
-};
-
-const PercentLiquidity = ({
-  amountInDollars,
-  percent,
-  onPercentChange,
-}: IPercentLiquidityProps) => {
-  return (
-    <div className="flex gap-4 w-full">
-      <TextField
-        label="Percentage Liquidity"
-        helperText="Percentage you are willing to spend"
-        variant="outlined"
-        value={10}
-        type="number"
-        className="flex-grow !mb-8"
-      />
-      <FormControl className="flex-grow !mb-8">
-        <InputLabel htmlFor="percent-liquidity">Amount Available</InputLabel>
-        <OutlinedInput
-          id="amount-liquidity"
-          startAdornment={<InputAdornment position="start">$</InputAdornment>}
-          disabled
-          label="Amount Available"
-          value={amountInDollars * percent}
-          type="number"
-          onChange={(e) => onPercentChange(parseFloat(e.target.value))}
-        />
-      </FormControl>
-      <FormControl className="flex-grow !mb-8">
-        <InputLabel htmlFor="amount-liquidity">Amount Available</InputLabel>
-        <OutlinedInput
-          id="amount-liquidity"
-          startAdornment={<InputAdornment position="start">$</InputAdornment>}
-          disabled
-          label="Amount Available"
-          value={amountInDollars * percent}
-          type="number"
-          onChange={(e) => onPercentChange(parseFloat(e.target.value))}
         />
       </FormControl>
     </div>
