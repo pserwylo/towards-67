@@ -1,5 +1,5 @@
 const AffordForm = () => {
-  return <div>Afford</div>
+  return <div>Afford</div>;
 };
 
 export default AffordForm;
