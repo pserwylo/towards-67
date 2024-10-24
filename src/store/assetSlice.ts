@@ -1,85 +1,40 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "./store.ts";
 
-export type LiquidityAmountRemaining = {
-  type: "amount-remaining";
-  amountInDollars: number;
-};
-
-export type LiquidityAmountSpendable = {
-  type: "amount-spendable";
-  amountInDollars: number;
-};
-
-export type LiquidityPercent = {
-  type: "percent";
-  percent: number;
-};
-
-export type LiquidityAll = {
-  type: "all";
-};
-
-export type LiquidityNone = {
-  type: "none";
-};
-
-export type Liquidity =
-  | LiquidityAmountRemaining
-  | LiquidityAmountSpendable
-  | LiquidityPercent
-  | LiquidityNone
-  | LiquidityAll;
-
-export type LiquidityType = Liquidity["type"];
-
 export type AssetHouse = {
   type: "house";
   label: string;
   slug: string;
-  amountInDollars: number;
-  liquidity: Liquidity;
+  amount: number;
+  loan: number;
+  canSell: boolean;
 };
 
 export type AssetShares = {
   type: "shares";
   label: string;
   slug: string;
-  amountInDollars: number;
-  liquidity: Liquidity;
-};
-
-export type AssetLoan = {
-  type: "loan";
-  label: string;
-  slug: string;
-  amountInDollars: number;
+  amount: number;
+  liquidity: number;
 };
 
 export type AssetOffset = {
   type: "offset";
   label: string;
   slug: string;
-  amountInDollars: number;
-  liquidity: Liquidity;
+  amount: number;
+  liquidity: number;
 };
 
 export type AssetMisc = {
   type: "misc";
   label: string;
   slug: string;
-  amountInDollars: number;
-  liquidity: Liquidity;
+  amount: number;
+  liquidity: number;
 };
 
-export type LiquidAsset = Exclude<Asset, AssetLoan>;
-
-export type Asset =
-  | AssetHouse
-  | AssetOffset
-  | AssetMisc
-  | AssetShares
-  | AssetLoan;
+export type Asset = AssetHouse | AssetOffset | AssetMisc | AssetShares;
 
 export type MockData = {
   label: string;
@@ -96,11 +51,8 @@ export const mockData: MockData[] = [
         type: "misc",
         label: "Savings",
         slug: "savings",
-        amountInDollars: 60000,
-        liquidity: {
-          type: "amount-remaining",
-          amountInDollars: 5000,
-        },
+        amount: 60000,
+        liquidity: 55000,
       },
     ],
   },
@@ -112,36 +64,23 @@ export const mockData: MockData[] = [
         type: "house",
         label: "Current House",
         slug: "current-house",
-        amountInDollars: 720000,
-        liquidity: {
-          type: "all",
-        },
-      },
-      {
-        type: "loan",
-        label: "Home loan",
-        slug: "home-loan",
-        amountInDollars: -425000,
+        amount: 720000,
+        loan: -425000,
+        canSell: true,
       },
       {
         type: "offset",
         label: "Offset",
         slug: "offset",
-        amountInDollars: 35000,
-        liquidity: {
-          type: "amount-remaining",
-          amountInDollars: 10000,
-        },
+        amount: 35000,
+        liquidity: 25000,
       },
       {
         type: "shares",
         label: "VAS",
         slug: "vas",
-        amountInDollars: 8000,
-        liquidity: {
-          type: "amount-spendable",
-          amountInDollars: 5000,
-        },
+        amount: 8000,
+        liquidity: 5000,
       },
     ],
   },
@@ -153,36 +92,67 @@ export const mockData: MockData[] = [
         type: "house",
         label: "Current House",
         slug: "current-house",
-        amountInDollars: 900000,
-        liquidity: {
-          type: "none",
-        },
-      },
-      {
-        type: "loan",
-        label: "Home loan",
-        slug: "home-loan",
-        amountInDollars: -260000,
+        amount: 900000,
+        loan: -260000,
+        canSell: false,
       },
       {
         type: "offset",
         label: "Offset",
         slug: "offset",
-        amountInDollars: 225000,
-        liquidity: {
-          type: "amount-remaining",
-          amountInDollars: 30000,
-        },
+        amount: 225000,
+        liquidity: 225000 - 30000,
       },
       {
         type: "shares",
         label: "VAS",
         slug: "vas",
-        amountInDollars: 65000,
-        liquidity: {
-          type: "amount-spendable",
-          amountInDollars: 20000,
-        },
+        amount: 65000,
+        liquidity: 20000,
+      },
+    ],
+  },
+  {
+    label: "Second Investment",
+    description:
+      "You have one home and one investment property, and want to buy a second investment property",
+    assets: [
+      {
+        type: "house",
+        label: "Current House",
+        slug: "current-house",
+        amount: 900000,
+        loan: -260000,
+        canSell: false,
+      },
+      {
+        type: "offset",
+        label: "Offset",
+        slug: "offset",
+        amount: 225000,
+        liquidity: 225000 - 30000,
+      },
+      {
+        type: "house",
+        label: "1st Investment",
+        slug: "1st-investment",
+        amount: 750000,
+        loan: -580000,
+        canSell: false,
+      },
+      {
+        type: "offset",
+        label: "Offset (investment)",
+        slug: "offset-investment",
+        amount: 20000,
+        liquidity: 20000,
+      },
+      {
+        type: "shares",
+        label: "VAS",
+        slug: "vas",
+        amount: 65000,
+        liquidity: 20000,
       },
     ],
   },
@@ -197,6 +167,21 @@ const assetSlice = createSlice({
     setMockData(state, action: PayloadAction<MockData>) {
       state.assets = action.payload.assets;
     },
+    updateAsset(
+      state,
+      action: PayloadAction<{ slug: string; details: Asset }>,
+    ) {
+      const { slug, details } = action.payload;
+      const asset = state.assets.find((a) => a.slug === slug);
+      if (asset == null) {
+        console.warn(`Tried to update asset ${slug} which doesn't exist. `, {
+          details,
+        });
+        return;
+      }
+
+      Object.assign(asset, details);
+    },
   },
   selectors: {
     selectAllAssets: (state) => state.assets,
@@ -205,45 +190,50 @@ const assetSlice = createSlice({
 
 export const { selectAllAssets } = assetSlice.selectors;
 
-export const calculateLiquidity = (asset: LiquidAsset) => {
-  const liquidity = asset.liquidity;
-  let amountInDollars = asset.amountInDollars;
-  if (asset.type === "house") {
-    amountInDollars -= amountInDollars * 0.02; // Subtract agent's fees.
-  }
-
-  if (liquidity.type === "all") {
-    return amountInDollars;
-  } else if (liquidity.type === "none") {
-    return 0;
-  } else if (liquidity.type === "amount-spendable") {
-    return liquidity.amountInDollars;
-  } else if (liquidity.type === "amount-remaining") {
-    return amountInDollars - liquidity.amountInDollars;
-  } else if (liquidity.type === "percent") {
-    return amountInDollars * (liquidity.percent / 100);
-  }
-
-  return asset.amountInDollars;
-};
-
-export const isLiquidAsset = (asset: Asset): asset is LiquidAsset => {
-  return asset.type !== "loan";
-};
-
 export const makeSelectAssetBySlug = (slug: string) => (state: RootState) =>
   state.assets.assets.find((a) => a.slug === slug);
 
 export const selectNetPosition = createSelector([selectAllAssets], (assets) => {
   let total = 0;
   assets.forEach((asset) => {
-    total +=
-      asset.type === "loan" ? asset.amountInDollars : calculateLiquidity(asset);
+    total += calculateLiquidity(asset);
   });
 
   return total;
 });
 
-export const { setMockData } = assetSlice.actions;
+export const calculateLiquidity = (asset: Asset) => {
+  if (asset.type !== "house") {
+    return asset.liquidity;
+  }
+
+  if (!asset.canSell) {
+    return 0;
+  }
+
+  const fees = asset.amount * 0.02;
+  return asset.amount - fees + asset.loan;
+};
+
+export const formatDollars = (
+  amount: number,
+  includeCurrency: boolean = true,
+) => {
+  const prefix = (amount < 0 ? "-" : "") + (includeCurrency ? "$" : "");
+
+  const absDollars = Math.abs(Number(amount.toPrecision(3)));
+
+  if (absDollars > 1000000) {
+    return prefix + absDollars / 1000000 + "m";
+  }
+
+  if (absDollars) {
+    return prefix + absDollars / 1000 + "k";
+  }
+
+  return prefix + absDollars;
+};
+
+export const { setMockData, updateAsset } = assetSlice.actions;
 
 export const assetReducer = assetSlice.reducer;

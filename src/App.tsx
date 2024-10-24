@@ -2,44 +2,25 @@ import {
   Box,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   Grid2 as Grid,
   LinearProgress,
+  Stack,
   styled,
   Typography,
 } from "@mui/material";
 import { Link, useNavigate, useOutlet } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import {
+  Asset,
   calculateLiquidity,
-  isLiquidAsset,
+  formatDollars,
   mockData,
   selectAllAssets,
   selectNetPosition,
   setMockData,
 } from "./store/assetSlice.ts";
 import { useDispatch, useSelector } from "react-redux";
-
-const formatDollars = (
-  amountInDollars: number,
-  includeCurrency: boolean = true,
-) => {
-  const prefix =
-    (amountInDollars < 0 ? "-" : "") + (includeCurrency ? "$" : "");
-
-  const absDollars = Math.abs(Number(amountInDollars.toPrecision(3)));
-
-  if (absDollars > 1000000) {
-    return prefix + absDollars / 1000000 + "m";
-  }
-
-  if (absDollars) {
-    return prefix + absDollars / 1000 + "k";
-  }
-
-  return prefix + absDollars;
-};
 
 function App() {
   const dispatch = useDispatch();
@@ -62,14 +43,8 @@ function App() {
     // TODO: On larger screens, don't render a dialog, but rather always render just the outlet in full screen
     //       (i.e. instead of the rest of the app).
     return (
-      <Dialog open onClose={() => navigate("/")}>
+      <Dialog open={true} onClose={() => navigate("/")}>
         <DialogContent>{outlet}</DialogContent>
-        <DialogActions>
-          <Button to="/">Cancel</Button>
-          <Button to="/" variant="contained">
-            Save
-          </Button>
-        </DialogActions>
       </Dialog>
     );
   };
@@ -82,7 +57,7 @@ function App() {
 
       <Box className="flex space-x-4">
         {mockData.map((data) => (
-          <Button onClick={() => dispatch(setMockData(data))}>
+          <Button key={data.label} onClick={() => dispatch(setMockData(data))}>
             {data.label}
           </Button>
         ))}
@@ -91,25 +66,12 @@ function App() {
       <Typography variant="h2">My stuff</Typography>
 
       <Grid container spacing={1}>
-        <Grid size={{ xs: 4, md: 3, lg: 1 }}>
-          <ItemButton
-            label="Available"
-            amountInDollars={netPosition}
-            to="/asset/net"
-          />
+        <Grid size={{ xs: 4, md: 3, lg: 2 }}>
+          <Net assets={assets} />
         </Grid>
         {assets.map((asset) => (
           <Grid key={asset.label} size={{ xs: 4, md: 3, lg: 2 }}>
-            <ItemButton
-              label={asset.label}
-              amountInDollars={asset.amountInDollars}
-              to={`/asset/${asset.slug}`}
-              progress={
-                isLiquidAsset(asset)
-                  ? (calculateLiquidity(asset) / asset.amountInDollars) * 100
-                  : undefined
-              }
-            />
+            <AssetSummary asset={asset} />
           </Grid>
         ))}
         <Grid size={{ xs: 4, md: 1, lg: 1 }}>
@@ -140,7 +102,7 @@ function App() {
           const newHouse = -newLoan + netPosition;
 
           return (
-            <Grid size={{ xs: 4, md: 3, lg: 2 }}>
+            <Grid key={multiplier} size={{ xs: 4, md: 3, lg: 2 }}>
               <SummaryButton
                 className="flex flex-col items-start"
                 to={`/afford/${multiplier}`}
@@ -172,26 +134,40 @@ function App() {
 }
 
 type ItemButtonProps = {
-  label: string;
-  amountInDollars: number;
-  to: string;
-  progress?: number;
+  asset: Asset;
 };
 
-const ItemButton = ({
-  label,
-  amountInDollars,
-  progress,
-  to,
-}: ItemButtonProps) => {
+const AssetSummary = ({ asset }: ItemButtonProps) => {
+  const liquidity = calculateLiquidity(asset);
   return (
-    <EditableSummaryButton label={label} to={to} progress={progress}>
-      <Typography
-        variant="body1"
-        color={amountInDollars >= 0 ? "success" : "error"}
-      >
-        {formatDollars(amountInDollars)}
-      </Typography>
+    <EditableSummaryButton
+      label={asset.label}
+      to={`/asset/${asset.slug}`}
+      progress={(liquidity / asset.amount) * 100}
+    >
+      <Stack>
+        <Typography variant="body1" color="success">
+          {formatDollars(asset.amount)}
+        </Typography>
+        {asset.type === "house" && (
+          <Typography variant="body1" color="error">
+            {formatDollars(asset.loan)}
+          </Typography>
+        )}
+      </Stack>
+    </EditableSummaryButton>
+  );
+};
+
+type INetProps = {
+  assets: Asset[];
+};
+
+const Net = ({ assets }: INetProps) => {
+  const net = assets.reduce((acc, asset) => acc + calculateLiquidity(asset), 0);
+  return (
+    <EditableSummaryButton label="Net" to="/net">
+      <Typography color="success">{formatDollars(net)}</Typography>
     </EditableSummaryButton>
   );
 };

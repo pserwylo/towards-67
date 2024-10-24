@@ -37,6 +37,15 @@ export const theme = createTheme({
       lineHeight: 1.15,
     },
   },
+  components: {
+    MuiOutlinedInput: {
+      styleOverrides: {
+        input: {
+          padding: 12,
+        },
+      },
+    },
+  },
 });
 
 export default theme;
