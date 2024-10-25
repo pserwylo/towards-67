@@ -167,6 +167,22 @@ const assetSlice = createSlice({
     setMockData(state, action: PayloadAction<MockData>) {
       state.assets = action.payload.assets;
     },
+    newAsset(state, action: PayloadAction<{ details: Asset }>) {
+      const { details } = action.payload;
+
+      const preferredSlug = details.label.toLowerCase().replace(/\W+/, "-");
+      let slug = preferredSlug;
+      let counter = 0;
+      while (state.assets.find((a) => a.slug === slug) !== undefined) {
+        counter++;
+        slug = `${preferredSlug}-${counter}`;
+      }
+
+      state.assets.push({
+        ...details,
+        slug,
+      });
+    },
     updateAsset(
       state,
       action: PayloadAction<{ slug: string; details: Asset }>,
@@ -192,6 +208,17 @@ export const { selectAllAssets } = assetSlice.selectors;
 
 export const makeSelectAssetBySlug = (slug: string) => (state: RootState) =>
   state.assets.assets.find((a) => a.slug === slug);
+
+export const selectNewSlug = createSelector([selectAllAssets], (assets) => {
+  let slug = "new-asset";
+  let counter = 0;
+  while (assets.find((a) => a.slug === slug) !== undefined) {
+    counter++;
+    slug = `new-asset-${counter}`;
+  }
+
+  return slug;
+});
 
 export const selectNetPosition = createSelector([selectAllAssets], (assets) => {
   let total = 0;
@@ -234,6 +261,6 @@ export const formatDollars = (
   return prefix + absDollars;
 };
 
-export const { setMockData, updateAsset } = assetSlice.actions;
+export const { setMockData, updateAsset, newAsset } = assetSlice.actions;
 
 export const assetReducer = assetSlice.reducer;

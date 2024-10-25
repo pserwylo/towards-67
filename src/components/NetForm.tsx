@@ -12,7 +12,6 @@ import {
   DialogActions,
   Stack,
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableRow,

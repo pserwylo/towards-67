@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   Asset,
   makeSelectAssetBySlug,
+  newAsset,
+  selectNewSlug,
   updateAsset,
 } from "../store/assetSlice.ts";
 import {
@@ -24,6 +26,7 @@ import HouseLiquiditySelector from "./HouseLiquiditySelector.tsx";
 const AssetForm = () => {
   const { slug } = useParams<{ slug: string }>();
   const originalAsset = useSelector(makeSelectAssetBySlug(slug!));
+  const newSlug = useSelector(selectNewSlug);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -34,14 +37,14 @@ const AssetForm = () => {
   useEffect(() => {
     setEditingAsset(
       originalAsset ?? {
-        slug: "new-asset",
+        slug: newSlug,
         type: "misc",
         label: "New Asset",
         amount: 0,
         liquidity: 0,
       },
     );
-  }, [originalAsset]);
+  }, [originalAsset, newSlug]);
 
   if (editingAsset === undefined) {
     return <Alert color="error">Unknown asset</Alert>;
@@ -75,7 +78,11 @@ const AssetForm = () => {
   }
 
   const handleOnSave = () => {
-    dispatch(updateAsset({ slug: slug!, details: editingAsset }));
+    if (originalAsset === undefined) {
+      dispatch(newAsset({ details: editingAsset }));
+    } else {
+      dispatch(updateAsset({ slug: slug!, details: editingAsset }));
+    }
     navigate("/");
   };
 

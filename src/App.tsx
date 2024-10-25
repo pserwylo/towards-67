@@ -70,7 +70,7 @@ function App() {
           <Net assets={assets} />
         </Grid>
         {assets.map((asset) => (
-          <Grid key={asset.label} size={{ xs: 4, md: 3, lg: 2 }}>
+          <Grid key={asset.slug} size={{ xs: 4, md: 3, lg: 2 }}>
             <AssetSummary asset={asset} />
           </Grid>
         ))}
