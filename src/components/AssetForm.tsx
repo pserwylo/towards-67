@@ -138,9 +138,16 @@ const AssetForm = () => {
       ) : (
         <LiquiditySlider
           amount={editingAsset.amount}
-          liquidity={editingAsset.liquidity}
+          liquidity={
+            editingAsset.liquidity === "all"
+              ? editingAsset.amount
+              : editingAsset.liquidity
+          }
           onChange={(liquidity) =>
-            setEditingAsset({ ...editingAsset, liquidity })
+            setEditingAsset({
+              ...editingAsset,
+              liquidity: liquidity === editingAsset.amount ? "all" : liquidity,
+            })
           }
         />
       )}

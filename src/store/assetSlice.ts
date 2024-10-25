@@ -10,12 +10,14 @@ export type AssetHouse = {
   canSell: boolean;
 };
 
+export type Liquidity = number | "all";
+
 export type AssetShares = {
   type: "shares";
   label: string;
   slug: string;
   amount: number;
-  liquidity: number;
+  liquidity: Liquidity;
 };
 
 export type AssetOffset = {
@@ -23,7 +25,7 @@ export type AssetOffset = {
   label: string;
   slug: string;
   amount: number;
-  liquidity: number;
+  liquidity: Liquidity;
 };
 
 export type AssetMisc = {
@@ -31,7 +33,7 @@ export type AssetMisc = {
   label: string;
   slug: string;
   amount: number;
-  liquidity: number;
+  liquidity: Liquidity;
 };
 
 export type Asset = AssetHouse | AssetOffset | AssetMisc | AssetShares;
@@ -170,7 +172,7 @@ const assetSlice = createSlice({
     newAsset(state, action: PayloadAction<{ details: Asset }>) {
       const { details } = action.payload;
 
-      const preferredSlug = details.label.toLowerCase().replace(/\W+/, "-");
+      const preferredSlug = details.label.toLowerCase().replace(/\W+/g, "-");
       let slug = preferredSlug;
       let counter = 0;
       while (state.assets.find((a) => a.slug === slug) !== undefined) {
@@ -231,7 +233,7 @@ export const selectNetPosition = createSelector([selectAllAssets], (assets) => {
 
 export const calculateLiquidity = (asset: Asset) => {
   if (asset.type !== "house") {
-    return asset.liquidity;
+    return asset.liquidity === "all" ? asset.amount : asset.liquidity;
   }
 
   if (!asset.canSell) {
