@@ -1,7 +1,6 @@
 import { Alert, Grid2 as Grid, Typography } from "@mui/material";
 import {
   formatDollars,
-  selectAllAssets,
   selectHouseWithMortgage,
   selectNetPosition,
 } from "../store/assetSlice.ts";

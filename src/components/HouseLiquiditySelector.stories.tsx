@@ -35,6 +35,10 @@ export const Primary: Story = {
           type: "house",
           amount,
           loan,
+          repayments: {
+            amount: 1000,
+            frequency: "weekly",
+          },
           canSell,
           label: "",
           slug: "",
