@@ -9,21 +9,26 @@ import {
 } from "../store/assetSlice.ts";
 import {
   Alert,
-  Box,
   Button,
   DialogActions,
   FormControl,
   InputAdornment,
   InputLabel,
+  MenuItem,
   OutlinedInput,
+  Select,
   TextField,
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import LiquiditySlider from "./LiquiditySlider.tsx";
 import HouseLiquiditySelector from "./HouseLiquiditySelector.tsx";
+import Grid from "@mui/material/Grid2";
 
-const AssetForm = () => {
+type IProps = {
+  addNew?: "house" | "misc";
+};
+const AssetForm = ({ addNew }: IProps) => {
   const { slug } = useParams<{ slug: string }>();
   const originalAsset = useSelector(makeSelectAssetBySlug(slug!));
   const newSlug = useSelector(selectNewSlug);
@@ -35,16 +40,31 @@ const AssetForm = () => {
   );
 
   useEffect(() => {
-    setEditingAsset(
-      originalAsset ?? {
+    if (originalAsset != null) {
+      setEditingAsset(originalAsset);
+    } else if (addNew === "house") {
+      setEditingAsset({
+        slug: newSlug,
+        type: "house",
+        label: "New House",
+        amount: 0,
+        loan: 0,
+        repayments: {
+          amount: 0,
+          frequency: "fortnightly",
+        },
+        canSell: false,
+      });
+    } else if (addNew === "misc") {
+      setEditingAsset({
         slug: newSlug,
         type: "misc",
         label: "New Asset",
         amount: 0,
         liquidity: 0,
-      },
-    );
-  }, [originalAsset, newSlug]);
+      });
+    }
+  }, [addNew, originalAsset, newSlug]);
 
   if (editingAsset === undefined) {
     return <Alert color="error">Unknown asset</Alert>;
@@ -67,15 +87,9 @@ const AssetForm = () => {
       return;
     }
 
-    const loan = parseInt(amountString, 10);
+    const loan = -parseInt(amountString, 10);
     setEditingAsset({ ...editingAsset, loan });
-    navigate("/");
   };
-
-  if (slug == null) {
-    navigate("/");
-    return null;
-  }
 
   const handleOnSave = () => {
     if (originalAsset === undefined) {
@@ -86,72 +100,149 @@ const AssetForm = () => {
     navigate("/");
   };
 
+  const handleRepaymentsAmountChange = (amountString: string) => {
+    if (editingAsset.type !== "house") {
+      return;
+    }
+
+    const amount = parseInt(amountString, 10);
+
+    setEditingAsset({
+      ...editingAsset,
+      repayments: {
+        ...editingAsset.repayments,
+        amount,
+      },
+    });
+  };
+
+  const handleRepaymentsFrequencyChange = (frequency: string) => {
+    if (editingAsset.type !== "house") {
+      return;
+    }
+
+    setEditingAsset({
+      ...editingAsset,
+      repayments: {
+        ...editingAsset.repayments,
+        frequency: frequency as "fortnightly" | "weekly" | "monthly",
+      },
+    });
+  };
+
   return (
-    <div className="flex flex-col">
-      <Typography variant="h3" className="!mb-8">
-        Asset details
-      </Typography>
-      <Box className="!mb-8 flex gap-x-8 w-full">
+    <Grid container spacing={2}>
+      <Grid size={12}>
+        <Typography variant="h3" className="!mb-8">
+          Asset details
+        </Typography>
+      </Grid>
+      <Grid size={6}>
         <TextField
           label="Label"
           variant="outlined"
           value={editingAsset.label}
+          fullWidth
           onChange={(e) => handleLabelChange(e.target.value)}
         />
-        <FormControl>
-          <InputLabel htmlFor="amount">Amount</InputLabel>
+      </Grid>
+      <Grid size={6}>
+        <FormControl fullWidth>
+          <InputLabel htmlFor="amount">
+            {editingAsset.type === "house" ? "Approx value" : "Amount"}
+          </InputLabel>
           <OutlinedInput
             id="amount"
-            label="Amount"
+            label={editingAsset.type === "house" ? "Approx value" : "Amount"}
             startAdornment={<InputAdornment position="start">$</InputAdornment>}
             value={editingAsset.amount}
             onChange={(e) => handleAssetAmountChange(e.target.value)}
             type="number"
           />
         </FormControl>
-        {editingAsset.type === "house" && (
-          <FormControl>
-            <InputLabel htmlFor="loan">Loan</InputLabel>
-            <OutlinedInput
-              id="loan"
-              label="Loan"
-              startAdornment={
-                <InputAdornment position="start">-$</InputAdornment>
-              }
-              value={-editingAsset.loan}
-              onChange={(e) => handleLoanAmountChange(e.target.value)}
-              type="number"
-            />
-          </FormControl>
-        )}
-      </Box>
-      {editingAsset.type === "house" ? (
-        <HouseLiquiditySelector
-          asset={editingAsset}
-          onChange={(canSell) =>
-            setEditingAsset({
-              ...editingAsset,
-              canSell,
-            })
-          }
-        />
-      ) : (
-        <LiquiditySlider
-          amount={editingAsset.amount}
-          liquidity={
-            editingAsset.liquidity === "all"
-              ? editingAsset.amount
-              : editingAsset.liquidity
-          }
-          onChange={(liquidity) =>
-            setEditingAsset({
-              ...editingAsset,
-              liquidity: liquidity === editingAsset.amount ? "all" : liquidity,
-            })
-          }
-        />
+      </Grid>
+      {editingAsset.type === "house" && (
+        <>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth>
+              <InputLabel htmlFor="loan">Loan</InputLabel>
+              <OutlinedInput
+                id="loan"
+                label="Loan"
+                startAdornment={
+                  <InputAdornment position="start">-$</InputAdornment>
+                }
+                value={-editingAsset.loan}
+                onChange={(e) => handleLoanAmountChange(e.target.value)}
+                type="number"
+              />
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel htmlFor="repayments">Repayments</InputLabel>
+              <OutlinedInput
+                id="repayments"
+                label="Repayments"
+                startAdornment={
+                  <InputAdornment position="start">$</InputAdornment>
+                }
+                value={editingAsset.repayments.amount}
+                onChange={(e) => handleRepaymentsAmountChange(e.target.value)}
+                type="number"
+              />
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 6, md: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel htmlFor="frequency">Frequency</InputLabel>
+              <Select
+                variant="outlined"
+                label="Frequency"
+                id="frequency"
+                value={editingAsset.repayments.frequency}
+                onChange={(e) =>
+                  handleRepaymentsFrequencyChange(e.target.value)
+                }
+              >
+                <MenuItem value="weekly">Weekly</MenuItem>
+                <MenuItem value="fortnightly">Fortnightly</MenuItem>
+                <MenuItem value="monthly">Monthly</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </>
       )}
-      <Box className="mt-8">
+      <Grid size={12}>
+        {editingAsset.type === "house" ? (
+          <HouseLiquiditySelector
+            asset={editingAsset}
+            onChange={(canSell) =>
+              setEditingAsset({
+                ...editingAsset,
+                canSell,
+              })
+            }
+          />
+        ) : (
+          <LiquiditySlider
+            amount={editingAsset.amount}
+            liquidity={
+              editingAsset.liquidity === "all"
+                ? editingAsset.amount
+                : editingAsset.liquidity
+            }
+            onChange={(liquidity) =>
+              setEditingAsset({
+                ...editingAsset,
+                liquidity:
+                  liquidity === editingAsset.amount ? "all" : liquidity,
+              })
+            }
+          />
+        )}
+      </Grid>
+      <Grid size={12} className="mt-8">
         <DialogActions>
           <Button component={Link} to="/">
             Cancel
@@ -168,8 +259,8 @@ const AssetForm = () => {
             Save
           </Button>
         </DialogActions>
-      </Box>
-    </div>
+      </Grid>
+    </Grid>
   );
 };
 

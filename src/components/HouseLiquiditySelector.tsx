@@ -3,7 +3,13 @@ import {
   calculateLiquidity,
   formatDollars,
 } from "../store/assetSlice.ts";
-import { Checkbox, FormControlLabel, FormLabel, Stack } from "@mui/material";
+import {
+  Box,
+  Checkbox,
+  FormControlLabel,
+  FormLabel,
+  Stack,
+} from "@mui/material";
 
 type IHouseLiquiditySelectorProps = {
   asset: AssetHouse;
@@ -17,14 +23,20 @@ const HouseLiquiditySelector = ({
   const liquidity = calculateLiquidity(asset);
   return (
     <Stack>
-      {!asset.canSell ? (
-        <FormLabel>Liquidity: $0</FormLabel>
-      ) : (
-        <FormLabel>
-          Liquidity: {formatDollars(calculateLiquidity(asset))} (less 2% agent
-          fees &amp; loan)
-        </FormLabel>
-      )}
+      <Box className="flex justify-between">
+        {!asset.canSell ? (
+          <>
+            <FormLabel>Liquidity: $0</FormLabel>
+          </>
+        ) : (
+          <>
+            <FormLabel>
+              Liquidity: {formatDollars(calculateLiquidity(asset))} (less 2%
+              agent fees &amp; loan)
+            </FormLabel>
+          </>
+        )}
+      </Box>
       <FormControlLabel
         control={
           <Checkbox

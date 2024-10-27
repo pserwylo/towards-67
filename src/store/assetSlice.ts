@@ -7,6 +7,10 @@ export type AssetHouse = {
   slug: string;
   amount: number;
   loan: number;
+  repayments: {
+    amount: number;
+    frequency: "weekly" | "fortnightly" | "monthly";
+  };
   canSell: boolean;
 };
 
@@ -68,6 +72,10 @@ export const mockData: MockData[] = [
         slug: "current-house",
         amount: 720000,
         loan: -425000,
+        repayments: {
+          amount: 2400,
+          frequency: "fortnightly",
+        },
         canSell: true,
       },
       {
@@ -96,6 +104,10 @@ export const mockData: MockData[] = [
         slug: "current-house",
         amount: 900000,
         loan: -260000,
+        repayments: {
+          amount: 2100,
+          frequency: "fortnightly",
+        },
         canSell: false,
       },
       {
@@ -125,6 +137,10 @@ export const mockData: MockData[] = [
         slug: "current-house",
         amount: 900000,
         loan: -260000,
+        repayments: {
+          amount: 2100,
+          frequency: "fortnightly",
+        },
         canSell: false,
       },
       {
@@ -140,6 +156,10 @@ export const mockData: MockData[] = [
         slug: "1st-investment",
         amount: 750000,
         loan: -580000,
+        repayments: {
+          amount: 6150,
+          frequency: "monthly",
+        },
         canSell: false,
       },
       {
@@ -163,7 +183,7 @@ export const mockData: MockData[] = [
 const assetSlice = createSlice({
   name: "assets",
   initialState: {
-    assets: mockData[0].assets,
+    assets: mockData[1].assets,
   },
   reducers: {
     setMockData(state, action: PayloadAction<MockData>) {
@@ -262,6 +282,14 @@ export const formatDollars = (
 
   return prefix + absDollars;
 };
+
+export const selectHouseWithMortgage = createSelector(
+  [selectAllAssets],
+  (assets): AssetHouse | undefined =>
+    assets.find((a) => a.type === "house" && a.loan !== 0) as
+      | AssetHouse
+      | undefined,
+);
 
 export const { setMockData, updateAsset, newAsset } = assetSlice.actions;
 

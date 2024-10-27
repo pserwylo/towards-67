@@ -14,9 +14,14 @@ const LiquiditySlider = ({
 }: ILiquiditySliderProps) => {
   return (
     <Box>
-      <FormLabel id="liquidity-type">
-        Liquidity: {formatDollars(liquidity)}
-      </FormLabel>
+      <Box className="flex justify-between">
+        <FormLabel id="liquidity-type">
+          Liquidity: {formatDollars(liquidity)}
+        </FormLabel>
+        <FormLabel id="liquidity-type">
+          Retain: {formatDollars(amount - liquidity)}
+        </FormLabel>
+      </Box>
       <Box className="pl-4 pr-4">
         <Slider
           onChange={(_, value) => onChange(value as number)}
